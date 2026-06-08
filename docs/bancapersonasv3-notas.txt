@@ -1,0 +1,4 @@
+BancaPersonasV3 - Notas de desarrollo
+
+Backend:  apps/backend/bancapersonasv3/  → mvn spring-boot:run (puerto 8080)
+Frontend: apps/frontend/bancapersonasv3/ → npx ng serve --open (puerto 4200)

@@ -1,0 +1,87 @@
+<div class="app">
+  <!-- ── Sidebar (desktop) ── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <app-icon name="sparkle" [size]="22" [sw]="2"/>
+      </div>
+      <div>
+        <div class="brand-name">Banco Digital</div>
+        <div class="brand-sub">Banca en línea</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Menú</div>
+
+    <a routerLink="/home" routerLinkActive="active" class="nav-item">
+      <app-icon name="home" [size]="19"/> Inicio
+    </a>
+    <a routerLink="/cuentas" routerLinkActive="active" class="nav-item">
+      <app-icon name="card" [size]="19"/> Mis cuentas
+    </a>
+    <a routerLink="/transferencia/propia" [class.active]="isTransfer()" class="nav-item">
+      <app-icon name="swap" [size]="19"/> Transferencias
+    </a>
+    <a routerLink="/movimientos" routerLinkActive="active" class="nav-item">
+      <app-icon name="clock" [size]="19"/> Movimientos
+    </a>
+
+    <div class="nav-spacer"></div>
+
+    <div class="side-card">
+      <h4>¿Necesitas ayuda?</h4>
+      <p>Atención 24/7 por chat seguro y teléfono.</p>
+      <button class="btn btn-accent btn-block" style="height:42px;font-size:13.5px">Contactar</button>
+    </div>
+
+    <button class="nav-item" (click)="logout()" style="margin-top:6px">
+      <app-icon name="logout" [size]="19"/> Cerrar sesión
+    </button>
+  </aside>
+
+  <!-- ── Main area ── -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div>
+        <div class="greet-h">{{ pageTitle }}</div>
+        <div class="greet-s">{{ pageSubtitle }}</div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><app-icon name="search" [size]="19"/></button>
+        <button class="icon-btn" style="position:relative">
+          <app-icon name="bell" [size]="19"/>
+          <span class="notif-dot"></span>
+        </button>
+        <div class="userchip">
+          <div class="avatar">{{ initials() }}</div>
+          <div>
+            <div class="nm">{{ firstName() }}</div>
+            <div class="rl">Cuenta personal</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="scroll">
+      <router-outlet/>
+    </div>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="botnav">
+      <a routerLink="/home" routerLinkActive="active">
+        <app-icon name="home" [size]="21"/> Inicio
+      </a>
+      <a routerLink="/cuentas" routerLinkActive="active">
+        <app-icon name="card" [size]="21"/> Cuentas
+      </a>
+      <a routerLink="/transferencia/propia" [class.active]="isTransfer()">
+        <app-icon name="swap" [size]="21"/> Transferir
+      </a>
+      <a routerLink="/movimientos" routerLinkActive="active">
+        <app-icon name="clock" [size]="21"/> Movimientos
+      </a>
+    </nav>
+  </div>
+</div>

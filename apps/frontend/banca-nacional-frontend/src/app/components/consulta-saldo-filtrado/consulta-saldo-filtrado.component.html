@@ -1,0 +1,116 @@
+<app-navbar/>
+
+<main class="main-content">
+  <div class="page-header">
+    <a routerLink="/home" class="back-link">← Volver</a>
+    <h1>🔍 Consulta de Saldos Filtrada</h1>
+    <p class="page-subtitle">Filtra tus cuentas por tipo</p>
+  </div>
+
+  <section class="section">
+    <!-- FILTRO -->
+    <div class="filter-container" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <label for="tipo" style="font-weight:600;color:var(--primary)">Filtrar por tipo de cuenta:</label>
+        <select id="tipo" class="form-select" style="max-width:200px;"
+                [ngModel]="tipoFiltro()" (ngModelChange)="onFiltroChange($event)">
+          <option value="TODAS">Todas las cuentas</option>
+          <option value="AHORROS">Cuentas de Ahorros</option>
+          <option value="CORRIENTE">Cuentas Corrientes</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- FILTRO ACTIVO -->
+    @if (tipoFiltro() !== 'TODAS') {
+      <div class="info-box info-filtro" style="margin-bottom:20px;">
+        <strong>📌 Filtro activo:</strong> Mostrando solo cuentas de tipo <strong>{{ tipoFiltro() }}</strong>
+        <a (click)="limpiarFiltro()" style="color:var(--gold-light);text-decoration:underline;margin-left:12px;cursor:pointer">Limpiar filtro</a>
+      </div>
+    }
+
+    @if (errorMsg()) {
+      <div class="alert alert-error"><span class="alert-icon">⚠</span><span>{{ errorMsg() }}</span></div>
+    } @else if (cuentas().length === 0) {
+      <div class="empty-state">
+        <p>
+          @if (tipoFiltro() !== 'TODAS') {
+            No tienes cuentas de tipo <strong>{{ tipoFiltro() }}</strong> registradas.
+          } @else {
+            No tienes cuentas activas registradas.
+          }
+        </p>
+      </div>
+    } @else {
+      <!-- TARJETAS -->
+      <div class="accounts-grid" style="margin-bottom:32px;">
+        @for (cuenta of cuentas(); track cuenta.id) {
+          <div class="account-card" [class.card-savings]="cuenta.tipoCuenta==='AHORROS'" [class.card-current]="cuenta.tipoCuenta!=='AHORROS'">
+            <div class="account-card-header">
+              <span class="account-type">{{ cuenta.tipoCuenta }}</span>
+              <span class="account-currency">{{ cuenta.moneda }}</span>
+            </div>
+            <div class="account-number">{{ cuenta.numeroCuentaFormateado }}</div>
+            <div class="account-balance-label">Saldo disponible</div>
+            <div class="account-balance">{{ cuenta.saldoDisponible.toFixed(2) }}</div>
+            <div class="account-total">Saldo total: {{ cuenta.saldo.toFixed(2) }} {{ cuenta.moneda }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- TABLA -->
+      <h2 class="section-title">Detalle de cuentas</h2>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Número de Cuenta</th><th>CCI</th><th>Tipo</th><th>Moneda</th>
+              <th>Saldo Total</th><th>Saldo Disponible</th><th>Estado</th><th>Fecha Apertura</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cuenta of cuentas(); track cuenta.id) {
+              <tr>
+                <td><strong>{{ cuenta.numeroCuentaFormateado }}</strong></td>
+                <td style="font-size:0.82rem">{{ cuenta.cci }}</td>
+                <td>
+                  <span class="badge" [class.badge-info]="cuenta.tipoCuenta==='AHORROS'" [class.badge-primary]="cuenta.tipoCuenta!=='AHORROS'">{{ cuenta.tipoCuenta }}</span>
+                </td>
+                <td>{{ cuenta.moneda }}</td>
+                <td class="amount">{{ cuenta.saldo.toFixed(2) }}</td>
+                <td class="amount">{{ cuenta.saldoDisponible.toFixed(2) }}</td>
+                <td><span class="badge" [class.badge-success]="cuenta.estado==='ACTIVA'" [class.badge-danger]="cuenta.estado!=='ACTIVA'">{{ cuenta.estado }}</span></td>
+                <td>{{ cuenta.fechaApertura | date:'dd/MM/yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TOTALES -->
+      <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;">
+        <div class="info-box" style="flex:1;min-width:200px;">
+          <strong>Total en Soles (PEN):</strong><br/>
+          <span style="font-size:1.2rem;font-weight:700;color:var(--primary)">S/ {{ totalPEN().toFixed(2) }}</span>
+        </div>
+        <div class="info-box" style="flex:1;min-width:200px;">
+          <strong>Total en Dólares (USD):</strong><br/>
+          <span style="font-size:1.2rem;font-weight:700;color:var(--primary)">$ {{ totalUSD().toFixed(2) }}</span>
+        </div>
+        <div class="info-box" style="flex:1;min-width:200px;">
+          <strong>Cantidad de cuentas:</strong><br/>
+          <span style="font-size:1.2rem;font-weight:700;color:var(--primary)">
+            {{ cuentas().length }}
+            @if (tipoFiltro() === 'AHORROS') { de Ahorros }
+            @else if (tipoFiltro() === 'CORRIENTE') { Corrientes }
+            @else { en total }
+          </span>
+        </div>
+      </div>
+    }
+  </section>
+</main>
+
+<footer class="app-footer">
+  <p>&copy; 2024 Banco Nacional. Todos los derechos reservados.</p>
+</footer>

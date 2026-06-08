@@ -6,8 +6,13 @@ dist/
 build/
 target/
 *.tgz
+*.jar
+*.zip
 coverage/
 .nyc_output/
+
+# Angular CLI cache
+.angular/
 
 # Environment files
 .env

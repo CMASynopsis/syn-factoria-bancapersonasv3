@@ -1,0 +1,141 @@
+<div class="page">
+  <!-- Hero row -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:36px">
+    <div>
+      <div class="eyebrow">RESUMEN GENERAL</div>
+      <h1 class="h1" style="margin-top:8px">Hola, {{ firstName() }} 👋</h1>
+      <div style="font-size:14.5px;color:var(--text-dim);font-weight:500;margin-top:6px">
+        Patrimonio total:&nbsp;
+        <span style="font-weight:800;color:var(--text);letter-spacing:-.01em" class="num">
+          S/ {{ patrimonio() | number:'1.2-2' }}
+        </span>
+      </div>
+    </div>
+    <a routerLink="/transferencia/propia" class="btn btn-primary">
+      <app-icon name="plus" [size]="18"/> Nueva transferencia
+    </a>
+  </div>
+
+  <!-- Accounts -->
+  <div class="section-head">
+    <span class="h2">Mis cuentas</span>
+    <a routerLink="/cuentas" class="link">
+      Ver todas <app-icon name="chevright" [size]="16"/>
+    </a>
+  </div>
+
+  @if (errorCuentas()) {
+    <div class="note note-warn" style="margin-bottom:16px">
+      <app-icon name="shield" [size]="16"/>{{ errorCuentas() }}
+    </div>
+  }
+
+  <div class="accounts">
+    @for (c of cuentas(); track c.id; let i = $index) {
+      <div class="acct" [style.background]="acctGradient(i)">
+        <div class="acct-top">
+          <div class="acct-type">{{ c.tipoCuenta }}</div>
+          <div class="acct-chip" [style]="acctChipStyle(i)">{{ c.moneda }}</div>
+        </div>
+        <div class="acct-no">{{ c.numeroCuentaFormateado }}</div>
+        <div class="acct-bal">
+          <div class="lbl">Saldo disponible</div>
+          <div class="amt num">{{ fmt(c.saldoDisponible, c.moneda) }}</div>
+          @if (c.saldo !== c.saldoDisponible) {
+            <div class="tot">Total: {{ fmt(c.saldo, c.moneda) }}</div>
+          }
+        </div>
+      </div>
+    } @empty {
+      @if (!errorCuentas()) {
+        <div style="color:var(--text-mute);font-size:14px;padding:12px 2px">Cargando cuentas...</div>
+      }
+    }
+  </div>
+
+  <!-- Quick actions -->
+  <div class="section-head" style="margin-top:40px">
+    <span class="h2">Acciones rápidas</span>
+  </div>
+  <div class="quick">
+    <a routerLink="/transferencia/propia" class="qa">
+      <div class="qa-ic" style="background:#EEF2FF;color:var(--primary)">
+        <app-icon name="swap" [size]="21"/>
+      </div>
+      <div>
+        <h4>Entre mis cuentas</h4>
+        <p>Mueve fondos entre tus propias cuentas al instante</p>
+      </div>
+    </a>
+    <a routerLink="/transferencia/mismo-banco" class="qa">
+      <div class="qa-ic" style="background:#F5F3FF;color:var(--accent)">
+        <app-icon name="bank" [size]="21"/>
+      </div>
+      <div>
+        <h4>Mismo banco</h4>
+        <p>Transferencia a otro cliente del banco</p>
+      </div>
+    </a>
+    <a routerLink="/transferencia/otro-banco" class="qa">
+      <div class="qa-ic" style="background:#F0FDF4;color:#22C55E">
+        <app-icon name="globe" [size]="21"/>
+      </div>
+      <div>
+        <h4>Otro banco</h4>
+        <p>Envía dinero por CCI a cualquier entidad</p>
+      </div>
+    </a>
+    <a routerLink="/movimientos" class="qa">
+      <div class="qa-ic" style="background:#FFF7ED;color:#F97316">
+        <app-icon name="clock" [size]="21"/>
+      </div>
+      <div>
+        <h4>Movimientos</h4>
+        <p>Revisa el historial completo de operaciones</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Recent transactions -->
+  <div class="section-head" style="margin-top:40px">
+    <span class="h2">Últimas operaciones</span>
+    <a routerLink="/movimientos" class="link">
+      Ver historial <app-icon name="chevright" [size]="16"/>
+    </a>
+  </div>
+
+  @if (errorTx()) {
+    <div class="note note-warn" style="margin-bottom:16px">
+      <app-icon name="shield" [size]="16"/>{{ errorTx() }}
+    </div>
+  }
+
+  <div class="card">
+    <div class="tx">
+      @for (t of recientes(); track t.id) {
+        <div class="tx-row">
+          <div class="tx-ic">
+            <app-icon name="swap" [size]="18"/>
+          </div>
+          <div>
+            <div class="tx-dest">{{ txLabel(t) }}</div>
+            <div class="tx-type">{{ txTypeLabel(t) }}</div>
+          </div>
+          <div class="tx-date">{{ t.fechaOperacion | date:'d MMM' }}</div>
+          <div class="tx-badge-cell">
+            <span class="badge" [class.badge-ok]="t.estado==='PROCESADA'" [class.badge-soft]="t.estado!=='PROCESADA'">
+              <span class="badge-dot"></span>{{ t.estado }}
+            </span>
+          </div>
+          <div class="tx-amt num" [style.color]="txColor(t)">
+            {{ txSign(t) }}{{ fmt(t.monto, t.moneda) }}
+          </div>
+        </div>
+      } @empty {
+        @if (!errorTx()) {
+          <div style="padding:28px 22px;color:var(--text-mute);font-size:14px">Sin operaciones recientes.</div>
+        }
+      }
+    </div>
+  </div>
+</div>

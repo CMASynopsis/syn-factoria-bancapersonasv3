@@ -1,0 +1,137 @@
+<div class="page">
+  <!-- Sub-nav pills -->
+  <div class="tx-pills">
+    <a routerLink="/transferencia/propia"      class="tx-pill">Entre mis cuentas</a>
+    <a routerLink="/transferencia/mismo-banco" class="tx-pill active">Mismo banco</a>
+    <a routerLink="/transferencia/otro-banco"  class="tx-pill">Otro banco</a>
+  </div>
+
+  <!-- STEP: FORM -->
+  @if (step() === 'form') {
+    <div class="card panel" style="max-width:640px">
+      <div style="margin-bottom:28px">
+        <div class="eyebrow">TRANSFERENCIA</div>
+        <h2 class="h2" style="margin-top:8px">Mismo banco</h2>
+        <p style="color:var(--text-dim);font-size:14px;margin:6px 0 0;font-weight:500">A otra cuenta de Banco Digital · Sin costo · Inmediata</p>
+      </div>
+
+      @if (error()) {
+        <div class="note note-warn" style="margin-bottom:20px">
+          <app-icon name="shield" [size]="16"/>{{ error() }}
+        </div>
+      }
+
+      <div class="grouped">
+        <div class="grouped-title"><app-icon name="card" [size]="14"/> ORIGEN</div>
+        <div class="field">
+          <label>Cuenta origen</label>
+          <select class="control" name="origen" [(ngModel)]="cuentaOrigenId">
+            <option value="">Seleccionar cuenta de origen</option>
+            @for (c of cuentas(); track c.id) {
+              <option [value]="c.id">{{ c.tipoCuenta }} · {{ c.numeroCuentaFormateado }} · {{ c.moneda === 'USD' ? '$' : 'S/' }} {{ c.saldoDisponible.toFixed(2) }}</option>
+            }
+          </select>
+          @if (cuentaOrigen()) {
+            <div style="font-size:12px;color:var(--text-mute);font-weight:600;margin-top:4px">
+              Saldo disponible: <strong>{{ fmt(cuentaOrigen()!.saldoDisponible) }}</strong>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="grouped" style="margin-top:16px">
+        <div class="grouped-title"><app-icon name="bank" [size]="14"/> DESTINO</div>
+        <div class="field">
+          <label>Número de cuenta destino</label>
+          <input class="control" type="text" name="numeroCuentaDestino"
+                 [(ngModel)]="numeroCuentaDestino"
+                 (input)="soloNumeros($event)"
+                 placeholder="Ej: 1234567890123" maxlength="13"/>
+          <div style="font-size:12px;color:var(--text-mute);font-weight:500;margin-top:4px">13 dígitos de la cuenta dentro de Banco Digital</div>
+        </div>
+      </div>
+
+      <div class="grouped" style="margin-top:16px">
+        <div class="grouped-title"><app-icon name="swap" [size]="14"/> IMPORTE</div>
+        <div class="field">
+          <label>Monto a transferir</label>
+          <div class="amount-wrap">
+            <span class="cur">{{ currSym() }}</span>
+            <input type="number" name="monto" [(ngModel)]="monto" step="0.01" min="0.01" placeholder="0.00"/>
+          </div>
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label>Glosa <span style="color:var(--text-mute);font-weight:500">(opcional)</span></label>
+          <input class="control" type="text" name="glosa" [(ngModel)]="glosa" placeholder="Referencia de la transferencia" maxlength="200"/>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px">
+        <a routerLink="/home" class="btn btn-ghost" style="flex:1">Cancelar</a>
+        <button class="btn btn-primary" style="flex:2" (click)="goReview()">
+          Continuar <app-icon name="arrowright" [size]="17"/>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- STEP: REVIEW -->
+  @if (step() === 'review') {
+    <div class="card panel" style="max-width:640px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
+        <button class="link" (click)="step.set('form')"><app-icon name="arrowleft" [size]="17"/> Editar</button>
+        <div style="flex:1">
+          <div class="eyebrow">PASO 2 DE 3</div>
+          <h2 class="h2" style="margin-top:6px">Confirmar transferencia</h2>
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="note note-warn" style="margin-bottom:20px">
+          <app-icon name="shield" [size]="16"/>{{ error() }}
+        </div>
+      }
+
+      <div class="grouped">
+        <div class="sum-row" style="border:none;padding:8px 0"><span class="k">Cuenta origen</span><span class="v mono">{{ cuentaOrigen()?.numeroCuentaFormateado }}</span></div>
+        <div class="sum-row" style="padding:8px 0"><span class="k">Cuenta destino</span><span class="v mono">{{ numeroCuentaDestino }}</span></div>
+        <div class="sum-row" style="padding:8px 0"><span class="k">Moneda</span><span class="v">{{ cuentaOrigen()?.moneda }}</span></div>
+        @if (glosa) {
+          <div class="sum-row" style="padding:8px 0"><span class="k">Glosa</span><span class="v">{{ glosa }}</span></div>
+        }
+        <div class="sum-row sum-total" style="padding:14px 0 4px;border-top:2px solid var(--border-strong);margin-top:6px">
+          <span class="k" style="font-size:15px;font-weight:700;color:var(--text)">Monto</span>
+          <span class="v num">{{ fmt(montoNum()) }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px">
+        <button class="btn btn-ghost" style="flex:1" (click)="step.set('form')">Volver</button>
+        <button class="btn btn-primary" style="flex:2" [disabled]="loading()" (click)="confirm()">
+          @if (loading()) { <app-icon name="clock" [size]="17"/> Procesando... }
+          @else { <app-icon name="check" [size]="17"/> Confirmar y enviar }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- STEP: SUCCESS -->
+  @if (step() === 'success') {
+    <div style="max-width:480px;margin:60px auto;text-align:center">
+      <div style="width:80px;height:80px;border-radius:50%;background:#F0FDF4;color:#22C55E;display:grid;place-items:center;margin:0 auto 24px">
+        <app-icon name="check" [size]="36" [sw]="2.5"/>
+      </div>
+      <h2 class="h2" style="font-size:26px;margin-bottom:12px">¡Transferencia exitosa!</h2>
+      <p style="color:var(--text-dim);font-size:15px;line-height:1.6">Los fondos han sido enviados correctamente.</p>
+      <div class="card" style="padding:24px;margin:28px 0;text-align:left">
+        <div class="sum-row" style="border:none;padding:6px 0"><span class="k">N° Operación</span><span class="v mono" style="font-size:13px">{{ numeroOp() }}</span></div>
+        <div class="sum-row" style="padding:6px 0"><span class="k">Monto</span><span class="v num">{{ fmt(montoNum()) }}</span></div>
+        <div class="sum-row" style="padding:6px 0"><span class="k">Destino</span><span class="v mono">{{ numeroCuentaDestino }}</span></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="btn btn-ghost" (click)="reset()">Nueva transferencia</button>
+        <a routerLink="/home" class="btn btn-primary">Ir al inicio</a>
+      </div>
+    </div>
+  }
+</div>

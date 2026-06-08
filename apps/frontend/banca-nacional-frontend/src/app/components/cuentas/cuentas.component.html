@@ -1,0 +1,94 @@
+<div class="page">
+  <div style="margin-bottom:32px">
+    <div class="eyebrow">PRODUCTOS</div>
+    <h1 class="h1" style="margin-top:8px">Mis cuentas</h1>
+    <p style="color:var(--text-dim);font-size:14.5px;margin:6px 0 0;font-weight:500">
+      Detalle y gestión de tus productos financieros
+    </p>
+  </div>
+
+  @if (error()) {
+    <div class="note note-warn" style="margin-bottom:24px">
+      <app-icon name="shield" [size]="16"/>{{ error() }}
+    </div>
+  }
+
+  <!-- Account cards row -->
+  <div class="accounts" style="margin-bottom:36px">
+    @for (c of cuentas(); track c.id; let i = $index) {
+      <div class="acct" [style.background]="acctGradient(i)"
+           [style.outline]="selected()?.id===c.id ? '3px solid #fff' : 'none'"
+           [style.outline-offset]="'3px'"
+           style="cursor:pointer"
+           (click)="select(c)">
+        <div class="acct-top">
+          <div class="acct-type">{{ c.tipoCuenta }}</div>
+          <div class="acct-chip" [style]="acctChipStyle(i)">{{ c.moneda }}</div>
+        </div>
+        <div class="acct-no">{{ c.numeroCuentaFormateado }}</div>
+        <div class="acct-bal">
+          <div class="lbl">Saldo disponible</div>
+          <div class="amt num">{{ fmt(c.saldoDisponible, c.moneda) }}</div>
+        </div>
+      </div>
+    } @empty {
+      @if (!error()) {
+        <div style="color:var(--text-mute);font-size:14px">Cargando cuentas...</div>
+      }
+    }
+  </div>
+
+  <!-- Selected account detail -->
+  @if (selected(); as c) {
+    <div class="card" style="overflow:hidden">
+      <div style="padding:26px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+        <div>
+          <div class="eyebrow">DETALLE DE CUENTA</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:6px">
+            {{ c.tipoCuenta }} — {{ c.moneda }}
+          </div>
+        </div>
+        <a routerLink="/transferencia/propia" class="btn btn-primary" style="height:44px;font-size:14px">
+          <app-icon name="swap" [size]="17"/> Transferir
+        </a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0">
+        <div style="padding:22px 28px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Número de cuenta</div>
+          <div style="font-size:16px;font-weight:700;margin-top:8px;font-family:var(--mono);letter-spacing:.02em">{{ c.numeroCuentaFormateado }}</div>
+        </div>
+        <div style="padding:22px 28px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Saldo disponible</div>
+          <div style="font-size:22px;font-weight:800;margin-top:8px;letter-spacing:-.02em" class="num">{{ fmt(c.saldoDisponible, c.moneda) }}</div>
+        </div>
+        <div style="padding:22px 28px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Saldo total</div>
+          <div style="font-size:22px;font-weight:800;margin-top:8px;letter-spacing:-.02em" class="num">{{ fmt(c.saldo, c.moneda) }}</div>
+        </div>
+        <div style="padding:22px 28px;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Estado</div>
+          <div style="margin-top:8px">
+            <span class="badge badge-ok badge-dot">{{ c.estado }}</span>
+          </div>
+        </div>
+        <div style="padding:22px 28px;border-right:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">CCI</div>
+          <div style="font-size:14px;font-weight:700;margin-top:8px;font-family:var(--mono);letter-spacing:.04em;color:var(--text-dim)">{{ c.cci }}</div>
+        </div>
+        <div style="padding:22px 28px;border-right:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Moneda</div>
+          <div style="font-size:16px;font-weight:700;margin-top:8px">{{ c.moneda === 'USD' ? 'Dólares americanos' : 'Soles peruanos' }}</div>
+        </div>
+        <div style="padding:22px 28px;border-right:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Apertura</div>
+          <div style="font-size:15px;font-weight:700;margin-top:8px">{{ c.fechaApertura }}</div>
+        </div>
+        <div style="padding:22px 28px">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mute)">Titular</div>
+          <div style="font-size:15px;font-weight:700;margin-top:8px">{{ c.usuarioNombre }}</div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

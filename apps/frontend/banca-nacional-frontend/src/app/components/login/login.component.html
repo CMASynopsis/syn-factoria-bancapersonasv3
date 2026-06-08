@@ -1,0 +1,93 @@
+<div class="auth">
+  <!-- Left brand panel -->
+  <div class="auth-brand">
+    <div class="auth-brand-inner">
+      <div class="brand-mark">
+        <app-icon name="sparkle" [size]="28" [sw]="2"/>
+      </div>
+      <div class="auth-headline">Mueve tu dinero<br>en segundos.</div>
+      <p class="auth-pitch">
+        Transferencias instantáneas, sin filas, sin papeleos.<br>
+        Banca digital pensada para ti.
+      </p>
+      <div class="auth-stats">
+        <div class="auth-stat">
+          <div class="auth-stat-val">+200K</div>
+          <div class="auth-stat-lbl">Usuarios activos</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-val">99.9%</div>
+          <div class="auth-stat-lbl">Disponibilidad</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-val">24/7</div>
+          <div class="auth-stat-lbl">Soporte seguro</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-form-wrap">
+    <div class="auth-form-inner">
+      <div class="auth-form-header">
+        <div class="brand-mark brand-mark-sm">
+          <app-icon name="sparkle" [size]="18" [sw]="2"/>
+        </div>
+        <span class="auth-brand-name">Banco Digital</span>
+      </div>
+
+      <h1 class="auth-title">Bienvenido de vuelta</h1>
+      <p class="auth-sub">Ingresa tus credenciales para continuar</p>
+
+      @if (logoutSuccess()) {
+        <div class="note note-info" style="margin-bottom:16px">
+          <app-icon name="check" [size]="16"/>
+          Sesión cerrada correctamente. ¡Hasta pronto!
+        </div>
+      }
+
+      @if (errorMsg()) {
+        <div class="note note-warn" style="margin-bottom:16px">
+          <app-icon name="shield" [size]="16"/>
+          {{ errorMsg() }}
+        </div>
+      }
+
+      <form (ngSubmit)="onSubmit()" novalidate>
+        <div class="field" style="margin-bottom:16px">
+          <label>Usuario</label>
+          <input class="control" type="text" name="username" [(ngModel)]="username"
+                 placeholder="Ingrese su usuario"
+                 autocomplete="username" maxlength="50" required/>
+        </div>
+
+        <div class="field" style="margin-bottom:24px">
+          <label>Contraseña</label>
+          <div class="pwd-wrap">
+            <input class="control" [type]="showPwd() ? 'text' : 'password'" name="password"
+                   [(ngModel)]="password"
+                   placeholder="••••••••"
+                   autocomplete="current-password" maxlength="100" required/>
+            <button type="button" class="pwd-toggle" (click)="showPwd.set(!showPwd())">
+              <app-icon [name]="showPwd() ? 'eyeoff' : 'eye'" [size]="18"/>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
+          @if (loading()) {
+            <app-icon name="clock" [size]="17"/> Ingresando...
+          } @else {
+            Ingresar a mi cuenta
+          }
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <app-icon name="lock" [size]="13"/>
+        <span>Conexión cifrada SSL/TLS 256 bits</span>
+      </div>
+    </div>
+  </div>
+</div>

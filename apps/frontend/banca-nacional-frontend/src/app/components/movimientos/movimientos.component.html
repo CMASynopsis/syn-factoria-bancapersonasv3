@@ -1,0 +1,60 @@
+<div class="page">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px">
+    <div>
+      <div class="eyebrow">HISTORIAL</div>
+      <h1 class="h1" style="margin-top:8px">Movimientos</h1>
+      <p style="color:var(--text-dim);font-size:14.5px;margin:6px 0 0;font-weight:500">
+        Todas tus operaciones en un solo lugar
+      </p>
+    </div>
+    <button class="btn btn-ghost" style="height:44px;font-size:14px">
+      <app-icon name="download" [size]="17"/> Exportar
+    </button>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="filter-chips">
+    <button class="chip" [class.active]="filter()==='todas'"    (click)="setFilter('todas')">Todas</button>
+    <button class="chip" [class.active]="filter()==='enviadas'" (click)="setFilter('enviadas')">Enviadas</button>
+    <button class="chip" [class.active]="filter()==='recibidas'" (click)="setFilter('recibidas')">Recibidas</button>
+  </div>
+
+  @if (error()) {
+    <div class="note note-warn" style="margin-bottom:16px">
+      <app-icon name="shield" [size]="16"/>{{ error() }}
+    </div>
+  }
+
+  <div class="card">
+    <div class="tx">
+      @for (t of list(); track t.id) {
+        <div class="tx-row">
+          <div class="tx-ic" [style.background]="txSign(t)==='+' ? '#F0FDF4' : '#FFF1F2'"
+               [style.color]="txColor(t)">
+            <app-icon [name]="txIcon(t)" [size]="18"/>
+          </div>
+          <div>
+            <div class="tx-dest">{{ txLabel(t) }}</div>
+            <div class="tx-type">{{ t.tipoTransferenciaDescripcion }}</div>
+          </div>
+          <div class="tx-date">{{ t.fechaOperacion | date:'d MMM yyyy, HH:mm' }}</div>
+          <div class="tx-badge-cell">
+            <span class="badge" [class.badge-ok]="t.estado==='PROCESADA'" [class.badge-soft]="t.estado!=='PROCESADA'">
+              <span class="badge-dot"></span>{{ t.estado }}
+            </span>
+          </div>
+          <div class="tx-amt num" [style.color]="txColor(t)">
+            {{ txSign(t) }}{{ fmt(t.monto, t.moneda) }}
+          </div>
+        </div>
+      } @empty {
+        <div style="padding:48px 22px;text-align:center">
+          <div style="color:var(--text-mute);font-size:14px">
+            @if (error()) { {{ error() }} }
+            @else { No hay movimientos en esta categoría. }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
