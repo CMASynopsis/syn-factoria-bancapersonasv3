@@ -26,9 +26,6 @@ resource "azurerm_container_registry" "main" {
   admin_enabled       = true
   tags                = local.tags
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_container_app_environment" "main" {
@@ -67,9 +64,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   version = "8.0.21"
   tags    = local.tags
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_mysql_flexible_database" "main" {
@@ -92,9 +86,6 @@ resource "azurerm_mysql_flexible_server_firewall_rule" "allow_all" {
 resource "azurerm_container_app" "backend" {
   name                = "${var.project_name}-be-${local.environment}"
   resource_group_name = data.azurerm_resource_group.main.name
-  lifecycle {
-    prevent_destroy = true
-  }
   container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
   tags                         = local.tags
@@ -178,9 +169,6 @@ resource "azurerm_storage_account" "frontend" {
   min_tls_version          = "TLS1_2"
   tags                     = local.tags
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "azurerm_storage_account_static_website" "frontend" {
