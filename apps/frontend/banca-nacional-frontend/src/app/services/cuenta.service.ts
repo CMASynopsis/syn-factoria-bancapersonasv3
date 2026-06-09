@@ -4,8 +4,9 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cuenta } from '../models/cuenta.model';
 import { ApiResponse } from '../models/transferencia.model';
+import { API_BASE } from '../api.config';
 
-const API = 'http://localhost:8080/api/cuentas';
+const API = `${API_BASE}/api/cuentas`;
 
 @Injectable({ providedIn: 'root' })
 export class CuentaService {

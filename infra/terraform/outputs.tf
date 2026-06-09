@@ -9,19 +9,23 @@ output "container_registry_login_server" {
 }
 
 output "container_app_url" {
-  description = "Backend Container App URL"
-  value       = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+  description = "Backend Container App stable URL (ingress FQDN)"
+  value       = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
 }
 
-output "static_web_app_url" {
-  description = "Frontend Static Web Apps URL"
-  value       = "https://${azurerm_static_web_app.frontend.default_host_name}"
+output "frontend_storage_account_name" {
+  description = "Storage Account name hosting the frontend static site"
+  value       = azurerm_storage_account.frontend.name
 }
 
-output "static_web_app_api_token" {
-  description = "Deployment token for Static Web Apps"
-  value       = azurerm_static_web_app.frontend.api_key
-  sensitive   = true
+output "frontend_static_website_url" {
+  description = "Primary endpoint URL for the frontend static website"
+  value       = azurerm_storage_account.frontend.primary_web_endpoint
+}
+
+output "frontend_static_website_host" {
+  description = "Host name of the frontend static website"
+  value       = azurerm_storage_account.frontend.primary_web_host
 }
 
 output "mysql_server_fqdn" {

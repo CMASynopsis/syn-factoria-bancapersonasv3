@@ -10,6 +10,14 @@ data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
 
+data "archive_file" "frontend_src" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../apps/frontend/banca-nacional-frontend/src"
+  output_path = "/tmp/frontend_src_${local.environment}.zip"
+}
+
+data "azurerm_client_config" "current" {}
+
 resource "azurerm_container_registry" "main" {
   name                = replace("${var.project_name}acr${local.environment}", "/[^a-zA-Z0-9]/", "")
   resource_group_name = data.azurerm_resource_group.main.name
@@ -157,16 +165,70 @@ resource "azurerm_role_assignment" "acr_pull" {
   principal_id         = azurerm_user_assigned_identity.main.principal_id
 }
 
-resource "azurerm_static_web_app" "frontend" {
-  name                = "${var.project_name}-frontend-${local.environment}"
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
-  sku_tier            = "Free"
-  tags                = local.tags
+# ---------------------------------------------------------------------------
+# Storage Account para hosting estático del frontend (Angular)
+# ---------------------------------------------------------------------------
+resource "azurerm_storage_account" "frontend" {
+  name                     = substr(replace("${var.project_name}fe${var.profile}", "/[^a-z0-9]/", ""), 0, 24)
+  resource_group_name      = data.azurerm_resource_group.main.name
+  location                 = data.azurerm_resource_group.main.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+  min_tls_version          = "TLS1_2"
+  tags                     = local.tags
 
   lifecycle {
     prevent_destroy = true
   }
+}
+
+resource "azurerm_storage_account_static_website" "frontend" {
+  storage_account_id = azurerm_storage_account.frontend.id
+  index_document     = "index.html"
+  error_404_document = "index.html"
+}
+
+resource "azurerm_role_assignment" "frontend_storage_blob_contributor" {
+  scope                = azurerm_storage_account.frontend.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# ---------------------------------------------------------------------------
+# Build y despliegue del frontend al contenedor $web
+# ---------------------------------------------------------------------------
+resource "terraform_data" "frontend_deploy" {
+  triggers_replace = [
+    data.archive_file.frontend_src.output_sha256
+  ]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-lc"]
+    environment = {
+      FRONTEND_DIR = "${path.module}/../../apps/frontend/banca-nacional-frontend"
+    }
+    command = <<-EOT
+      docker run --rm \
+        -v "$FRONTEND_DIR:/app" \
+        -w /app \
+        node:25-alpine \
+        sh -c "sed -i \"s|API_BASE = '.*'|API_BASE = 'https://${azurerm_container_app.backend.ingress[0].fqdn}'|\" src/app/api.config.ts && npm install && npm run build" && \
+      echo "Esperando propagación del rol Storage Blob Data Contributor..." && \
+      sleep 60 && \
+      az storage blob upload-batch \
+        --account-name ${azurerm_storage_account.frontend.name} \
+        --auth-mode login \
+        --destination '$web' \
+        --source "$FRONTEND_DIR/dist/banca-frontend/browser" \
+        --overwrite
+    EOT
+  }
+
+  depends_on = [
+    azurerm_storage_account_static_website.frontend,
+    azurerm_role_assignment.frontend_storage_blob_contributor,
+  ]
 }
 
 resource "azurerm_consumption_budget_resource_group" "monthly" {
