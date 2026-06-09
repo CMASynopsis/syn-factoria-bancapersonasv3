@@ -1,0 +1,66 @@
+name: Build & Push Backend to ACR
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'apps/backend/**'
+      - 'infra/docker/backend/**'
+      - 'contracts/**'
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  BACKEND_DIR: 'apps/backend/banca-nacional-backend'
+  DOCKERFILE_PATH: 'infra/docker/backend/banca-nacional-backend/Dockerfile'
+  IMAGE_NAME: 'banca-nacional-backend'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build with Maven
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: mvn clean package -DskipTests -B
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          IMAGE_FULL_NAME="${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}"
+          TAG_SHA="${{ github.sha }}"
+          TAG_BRANCH="develop-latest"
+
+          docker build \
+            -f "${{ github.workspace }}/${{ env.DOCKERFILE_PATH }}" \
+            -t "${IMAGE_FULL_NAME}:${TAG_SHA}" \
+            -t "${IMAGE_FULL_NAME}:${TAG_BRANCH}" \
+            .
+
+          docker push "${IMAGE_FULL_NAME}:${TAG_SHA}"
+          docker push "${IMAGE_FULL_NAME}:${TAG_BRANCH}"
