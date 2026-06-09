@@ -35,9 +35,15 @@ Compila el backend `banca-nacional-backend` (Java 21 + Spring Boot), publica su 
 
 ## Jobs
 
-### `build-and-push`
+### `build`
 
-Ejecuta en `ubuntu-latest` con permisos de lectura de contenido y escritura de paquetes.
+Compila el proyecto Maven y valida que el JAR se genera correctamente.
+
+| Propiedad | Valor |
+|-----------|-------|
+| Runner | `ubuntu-latest` |
+| Permisos | `contents: read` |
+| Dependencias | Ninguna |
 
 #### Pasos
 
@@ -47,13 +53,44 @@ Ejecuta en `ubuntu-latest` con permisos de lectura de contenido y escritura de p
    ```bash
    mvn clean package -DskipTests -B
    ```
-4. **Set up Docker Buildx** — `docker/setup-buildx-action@v4`
-5. **Log in to Azure Container Registry** — `docker/login-action@v3` usando secrets del repositorio
-6. **Build and push Docker image** — Construye la imagen con el Dockerfile multi-stage y publica dos tags:
+
+---
+
+### `docker`
+
+Construye la imagen Docker con el Dockerfile multi-stage y la publica en el ACR.
+
+| Propiedad | Valor |
+|-----------|-------|
+| Runner | `ubuntu-latest` |
+| Permisos | `contents: read`, `packages: write` |
+| Dependencias | `build` (debe completarse con éxito) |
+
+#### Pasos
+
+1. **Checkout repository** — `actions/checkout@v6`
+2. **Set up Docker Buildx** — `docker/setup-buildx-action@v4`
+3. **Log in to Azure Container Registry** — `docker/login-action@v3` usando secrets del repositorio
+4. **Build and push Docker image** — Construye y publica dos tags:
    - `<acr-login-server>/banca-nacional-backend:develop-latest`
    - `<acr-login-server>/banca-nacional-backend:<commit-sha>`
-7. **Log in to Azure** — `azure/login@v2` usando el Service Principal configurado en `AZURE_CREDENTIALS`
-8. **Update Azure Container App** — Actualiza la imagen del Container App para que use el tag del commit:
+
+---
+
+### `deploy`
+
+Actualiza el Azure Container App para que use la imagen recién publicada.
+
+| Propiedad | Valor |
+|-----------|-------|
+| Runner | `ubuntu-latest` |
+| Permisos | `contents: read` |
+| Dependencias | `docker` (debe completarse con éxito) |
+
+#### Pasos
+
+1. **Log in to Azure** — `azure/login@v2` usando el Service Principal configurado en `AZURE_CREDENTIALS`
+2. **Update Azure Container App** — Actualiza la imagen del Container App para que use el tag del commit:
    ```bash
    az containerapp update \
      --name banca-nacional-be-development \
