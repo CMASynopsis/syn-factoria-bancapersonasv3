@@ -10,7 +10,7 @@ info:
     url: "https://synopsis.ws"
 
 servers:
-  - url: "https://banca-nacional-be-development--asvb6m4.wittyrock-8526a645.eastus2.azurecontainerapps.io"
+  - url: "https://banca-nacional-be-development.wittyrock-8526a645.eastus2.azurecontainerapps.io"
     description: Desarrollo (Azure Container Apps)
   - url: "http://localhost:8080"
     description: Local
