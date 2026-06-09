@@ -19,3 +19,9 @@ tags = {
   Environment = "Development"
   ManagedBy   = "Terraform"
 }
+
+# Controls de prevent_destroy — desactivar solo en entornos efímeros (dev)
+acr_prevent_destroy             = true
+mysql_prevent_destroy           = true
+container_app_prevent_destroy   = true
+storage_account_prevent_destroy = true

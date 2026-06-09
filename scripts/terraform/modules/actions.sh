@@ -72,6 +72,40 @@ action_destroy() {
   fi
 
   local tfvars_file="${PROFILES_DIR}/${TF_PROFILE}.tfvars"
+
+  # Validar que todos los prevent_destroy estén desactivados
+  if [[ -f "${tfvars_file}" ]]; then
+    local prevent_vars=(
+      "acr_prevent_destroy"
+      "mysql_prevent_destroy"
+      "container_app_prevent_destroy"
+      "storage_account_prevent_destroy"
+    )
+    local blocked=()
+    for var_name in "${prevent_vars[@]}"; do
+      local value
+      value=$(grep -E "^${var_name}\s*=" "${tfvars_file}" | sed -E 's/.*=\s*//' | tr -d ' "')
+      if [[ -z "${value}" ]]; then
+        log "ERROR" "Variable '${var_name}' no encontrada en ${tfvars_file}"
+        blocked+=("${var_name}=MISSING")
+      elif [[ "${value}" != "false" ]]; then
+        log "ERROR" "Variable '${var_name}' está activa (${value}) en ${tfvars_file}"
+        blocked+=("${var_name}=${value}")
+      fi
+    done
+
+    if [[ ${#blocked[@]} -gt 0 ]]; then
+      log "ERROR" "Destroy ABORTADO: hay ${#blocked[@]} recurso(s) protegido(s) con prevent_destroy"
+      log "INFO" "Para permitir el destroy, establece estas variables a 'false' en ${tfvars_file}:"
+      for item in "${blocked[@]}"; do
+        log "INFO" "  - ${item}"
+      done
+      exit 1
+    fi
+
+    log "SUCCESS" "Validación de prevent_destroy completada: todos los recursos pueden ser destruidos."
+  fi
+
   local target_args
   target_args=$(build_target_args "${TARGET}")
   ensure_workspace
