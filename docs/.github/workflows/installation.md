@@ -61,31 +61,58 @@ El workflow actualiza el **Azure Container App** tras publicar la imagen. Para e
 
 ### 2.1 Crear el Service Principal
 
+> **Nota:** El comando `az ad sp create-for-rbac --sdk-auth` presenta un bug conocido con Python 3.14 en ciertas versiones de Azure CLI. Usa el procedimiento por pasos separados que se indica a continuación.
+
 Desde Azure CLI ejecuta:
 
 ```bash
-az ad sp create-for-rbac \
-  --name "github-actions-banca-dev" \
+APP_NAME="github-actions-banca-dev"
+SUBSCRIPTION="39f6d339-f9c9-4dbc-92a3-e8ee0f6b1bcf"
+RG="rg-geniarh-dev"
+SCOPE="/subscriptions/$SUBSCRIPTION/resourceGroups/$RG"
+
+# 1. Crear App Registration
+APP_ID=$(az ad app create --display-name "$APP_NAME" --query "appId" -o tsv)
+
+# 2. Crear Service Principal
+SP_ID=$(az ad sp create --id "$APP_ID" --query "id" -o tsv)
+
+# 3. Crear Client Secret
+CLIENT_SECRET=$(az ad app credential reset --id "$APP_ID" --display-name "github-actions" --query "password" -o tsv)
+
+# 4. Asignar rol Contributor sobre el resource group
+az role assignment create \
+  --assignee "$SP_ID" \
   --role contributor \
-  --scopes /subscriptions/39f6d339-f9c9-4dbc-92a3-e8ee0f6b1bcf/resourceGroups/rg-geniarh-dev \
-  --sdk-auth
+  --scope "$SCOPE"
 ```
 
-El comando devuelve un JSON similar a:
+### 2.2 Construir el JSON de AZURE_CREDENTIALS
 
-```json
+Después de ejecutar los pasos anteriores, arma el JSON con los valores obtenidos:
+
+```bash
+TENANT_ID=$(az account show --query "tenantId" -o tsv)
+
+cat <<EOF
 {
-  "clientId": "...",
-  "clientSecret": "...",
-  "subscriptionId": "...",
-  "tenantId": "...",
-  ...
+  "clientId": "$APP_ID",
+  "clientSecret": "$CLIENT_SECRET",
+  "subscriptionId": "$SUBSCRIPTION",
+  "tenantId": "$TENANT_ID",
+  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+  "resourceManagerEndpointUrl": "https://management.azure.com/",
+  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+  "galleryEndpointUrl": "https://gallery.azure.com/",
+  "managementEndpointUrl": "https://management.core.windows.net/"
 }
+EOF
 ```
 
-> **Importante:** Guarda todo el JSON. No podrás recuperar `clientSecret` después.
+> **Importante:** Guarda el `clientSecret` en un lugar seguro. No se podrá recuperar después.
 
-### 2.2 Registrar el secret en GitHub
+### 2.3 Registrar el secret en GitHub
 
 Crea un nuevo repository secret llamado **`AZURE_CREDENTIALS`** y pega el JSON completo como valor.
 
