@@ -61,6 +61,16 @@ action_destroy() {
   log "WARN" "Preparando destrucción de recursos (perfil: ${TF_PROFILE})..."
   check_profile_files
   confirm_action "DESTROY"
+
+  local tf_dir="${TERRAFORM_DIR:-$(pwd)}"
+  if grep -rq 'resource "azurerm_resource_group"' "${tf_dir}"/*.tf 2>/dev/null; then
+    log "WARN" "Se detectó un recurso 'azurerm_resource_group' en la configuración."
+    log "WARN" "El Resource Group PUEDE ser destruido. Revisa infra/terraform/main.tf"
+  else
+    log "INFO" "Resource Group protegido: está definido como data source (no será eliminado)."
+    log "INFO" "Se destruirán solo los servicios internos (Container App, ACR, MySQL, Storage, etc.)."
+  fi
+
   local tfvars_file="${PROFILES_DIR}/${TF_PROFILE}.tfvars"
   local target_args
   target_args=$(build_target_args "${TARGET}")
@@ -72,7 +82,7 @@ action_destroy() {
     # shellcheck disable=SC2086
     terraform destroy ${AUTO_APPROVE} ${target_args}
   fi
-  log "SUCCESS" "Destroy completado (perfil: ${TF_PROFILE})"
+  log "SUCCESS" "Destroy completado (perfil: ${TF_PROFILE}). El Resource Group permanece activo."
 }
 
 action_validate() {
