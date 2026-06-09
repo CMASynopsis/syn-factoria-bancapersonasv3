@@ -119,30 +119,4 @@ variable "budget_notification_email" {
   default     = "elperez@synopsis.ws"
 }
 
-# ---------------------------------------------------------------------------
-# Lifecycle — prevent_destroy controls (one per protected resource)
-# ---------------------------------------------------------------------------
 
-variable "acr_prevent_destroy" {
-  description = "If true, Terraform will error on destroy of the ACR"
-  type        = bool
-  default     = true
-}
-
-variable "mysql_prevent_destroy" {
-  description = "If true, Terraform will error on destroy of the MySQL server"
-  type        = bool
-  default     = true
-}
-
-variable "container_app_prevent_destroy" {
-  description = "If true, Terraform will error on destroy of the Container App"
-  type        = bool
-  default     = true
-}
-
-variable "storage_account_prevent_destroy" {
-  description = "If true, Terraform will error on destroy of the Storage Account"
-  type        = bool
-  default     = true
-}

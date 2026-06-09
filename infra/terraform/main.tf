@@ -27,7 +27,7 @@ resource "azurerm_container_registry" "main" {
   tags                = local.tags
 
   lifecycle {
-    prevent_destroy = var.acr_prevent_destroy
+    prevent_destroy = false
   }
 }
 
@@ -68,7 +68,7 @@ resource "azurerm_mysql_flexible_server" "main" {
   tags    = local.tags
 
   lifecycle {
-    prevent_destroy = var.mysql_prevent_destroy
+    prevent_destroy = false
   }
 }
 
@@ -94,7 +94,7 @@ resource "azurerm_container_app" "backend" {
   resource_group_name = data.azurerm_resource_group.main.name
 
   lifecycle {
-    prevent_destroy = var.container_app_prevent_destroy
+    prevent_destroy = false
   }
 
   container_app_environment_id = azurerm_container_app_environment.main.id
@@ -181,7 +181,7 @@ resource "azurerm_storage_account" "frontend" {
   tags                     = local.tags
 
   lifecycle {
-    prevent_destroy = var.storage_account_prevent_destroy
+    prevent_destroy = false
   }
 }
 

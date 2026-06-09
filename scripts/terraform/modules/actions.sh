@@ -71,41 +71,26 @@ action_destroy() {
     log "INFO" "Se destruirán solo los servicios internos (Container App, ACR, MySQL, Storage, etc.)."
   fi
 
-  local tfvars_file="${PROFILES_DIR}/${TF_PROFILE}.tfvars"
+  local tf_dir="${TERRAFORM_DIR:-$(pwd)}"
 
-  # Validar que todos los prevent_destroy estén desactivados
-  if [[ -f "${tfvars_file}" ]]; then
-    local prevent_vars=(
-      "acr_prevent_destroy"
-      "mysql_prevent_destroy"
-      "container_app_prevent_destroy"
-      "storage_account_prevent_destroy"
-    )
-    local blocked=()
-    for var_name in "${prevent_vars[@]}"; do
-      local value
-      value=$(grep -E "^${var_name}\s*=" "${tfvars_file}" | sed -E 's/.*=\s*//' | tr -d ' "')
-      if [[ -z "${value}" ]]; then
-        log "ERROR" "Variable '${var_name}' no encontrada en ${tfvars_file}"
-        blocked+=("${var_name}=MISSING")
-      elif [[ "${value}" != "false" ]]; then
-        log "ERROR" "Variable '${var_name}' está activa (${value}) en ${tfvars_file}"
-        blocked+=("${var_name}=${value}")
-      fi
-    done
+  # Validar que ningún recurso tenga prevent_destroy = true en los .tf
+  log "INFO" "Validando bloques lifecycle prevent_destroy en ${tf_dir}..."
+  local protected_resources
+  protected_resources=$(grep -n 'prevent_destroy\s*=\s*true' "${tf_dir}"/*.tf 2>/dev/null || true)
 
-    if [[ ${#blocked[@]} -gt 0 ]]; then
-      log "ERROR" "Destroy ABORTADO: hay ${#blocked[@]} recurso(s) protegido(s) con prevent_destroy"
-      log "INFO" "Para permitir el destroy, establece estas variables a 'false' en ${tfvars_file}:"
-      for item in "${blocked[@]}"; do
-        log "INFO" "  - ${item}"
-      done
-      exit 1
-    fi
-
-    log "SUCCESS" "Validación de prevent_destroy completada: todos los recursos pueden ser destruidos."
+  if [[ -n "${protected_resources}" ]]; then
+    log "ERROR" "Destroy ABORTADO: se detectaron recursos con prevent_destroy = true"
+    log "ERROR" "Archivos y líneas afectadas:"
+    while IFS= read -r line; do
+      log "ERROR" "  ${line}"
+    done <<< "${protected_resources}"
+    log "INFO" "Para permitir el destroy, cambia 'prevent_destroy = true' a 'prevent_destroy = false' en los archivos listados."
+    exit 1
   fi
 
+  log "SUCCESS" "Validación de prevent_destroy completada: todos los recursos pueden ser destruidos."
+
+  local tfvars_file="${PROFILES_DIR}/${TF_PROFILE}.tfvars"
   local target_args
   target_args=$(build_target_args "${TARGET}")
   ensure_workspace
