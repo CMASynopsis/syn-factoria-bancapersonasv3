@@ -84,6 +84,25 @@ source scripts/commons/get.sh
 VAR=$(set_with_fallback "VAR_NAME" "valor_por_defecto")
 ```
 
+### ⚠️  Archivos .env — comillas en valores con espacios
+
+Los archivos `{profile}.env` se cargan con `source` de bash. **Los valores con espacios o caracteres especiales deben ir entre comillas dobles**:
+
+```bash
+# ✅ Correcto — bash preserva el valor completo
+JAVA_OPTS="-Xmx256m -Xms128m"
+MY_VAR="valor con espacios"
+
+# ❌ Incorrecto — bash interpreta el espacio como separador de comando
+JAVA_OPTS=-Xmx256m -Xms128m
+# Equivale a: JAVA_OPTS=-Xmx256m; ejecutar: -Xms128m → comando no encontrado
+```
+
+Reglas:
+- Valores sin espacios ni caracteres especiales: `KEY=simple_value` (sin comillas)
+- Valores con espacios o caracteres especiales: `KEY="valor con espacios"` (con comillas dobles)
+- Esto aplica tanto en `{profile}.env` como en `{profile}.env.example`
+
 ### Naming
 - kebab-case: `local-start.sh`, `build-image.sh`
 - Sin sufijos de entorno en el nombre — el perfil se pasa con `-p`
@@ -137,3 +156,23 @@ Esto evita inicializar variables con el perfil `dev` cuando el usuario pasó `--
    ```
 3. El sufijo único evita colisiones con funciones definidas en scripts sourceados.
 4. La función se invoca inline (con `$()`) y no se asigna a variable porque `set -u` de `set -euo pipefail` haría que scripts sourceados (ej. `check.sh`) pisaran accidentalmente la variable global `SCRIPT_DIR`, rompiendo todas las rutas aguas abajo.
+
+### ⚠️  Módulos — Sufijo único por archivo
+
+Cuando un módulo es sourceado por otro script y ambos definen su propia función de directorio, **cada archivo debe usar un sufijo único diferente** para evitar colisiones:
+
+```bash
+# modules/common.sh
+_commons_dir_f3a6e7b2c1d4e5f6a7b8() { echo "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"; }
+
+# modules/container.sh — usa sufijo DIFERENTE
+_modules_dir_a1b2c3d4e5f6g7h8i9j0() { echo "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"; }
+source "$(_modules_dir_a1b2c3d4e5f6g7h8i9j0)/common.sh"
+```
+
+Reglas:
+- `common.sh` (sourceado por container.sh): usa `_commons_dir_<uuid>` — nombre distinto al de container.sh
+- `container.sh` (sourceado por run.sh): usa `_modules_dir_<uuid>` — nombre distinto al de common.sh
+- `run.sh` (entry point): usa `_runner_dir_<uuid>` — nombre distinto a todos
+
+Si dos archivos usaran el mismo nombre de función, `BASH_SOURCE[0]` resolvería según dónde se definió la función, no según dónde se llama. Usar prefijos semánticos (`_commons_`, `_modules_`, `_runner_`, `_scripts_`) + uuid único por archivo elimina el riesgo.

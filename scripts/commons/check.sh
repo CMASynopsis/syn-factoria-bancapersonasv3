@@ -3,10 +3,9 @@
 # Author: CMA Consulting
 # Version: 2.0
 
-# Load required dependencies
-CHECK_SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
-source "${CHECK_SCRIPT_DIR}/log.sh"
-unset CHECK_SCRIPT_DIR
+# Load required dependencies — función con sufijo único para evitar colisiones
+_script_dir_f3a6e7b2c1d4e5f6a7b8() { echo "$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"; }
+source "$(_script_dir_f3a6e7b2c1d4e5f6a7b8)/log.sh"
 
 # Function: check_aws_cli
 # Description: Check if AWS CLI is installed and available

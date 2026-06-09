@@ -7,7 +7,6 @@ DEBUG_ENABLED="${DEBUG_ENABLED:-false}"
 
 # Habilitar guardado de logs en archivo
 LOG_TO_FILE="${LOG_TO_FILE:-false}"
-LOG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.logs"
 
 # Generar código aleatorio de 12 caracteres
 generate_random_id() {
@@ -18,6 +17,11 @@ generate_random_id() {
 # ID único y timestamp para esta ejecución (generado una sola vez)
 export LOG_EXEC_ID="${LOG_EXEC_ID:-$(generate_random_id)}"
 export LOG_TIMESTAMP="${LOG_TIMESTAMP:-$(date '+%Y%m%d_%H%M%S')}"
+
+# Función para obtener el directorio de logs con sufijo único
+log_dir_f3a6e7b2c1d4e5f6a7b8() {
+  echo "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.logs"
+}
 
 # Función de log unificada
 log() {
@@ -62,8 +66,10 @@ log() {
   
   # Guardar en archivo (sin colores)
   if [[ "$LOG_TO_FILE" == "true" ]]; then
-    mkdir -p "$LOG_DIR"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $MODULE_NAME - $level - $message" >> "$LOG_DIR/${LOG_MODULE_NAME}_${LOG_TIMESTAMP}_${LOG_EXEC_ID}.log"
+    local log_dir
+    log_dir="$(log_dir_f3a6e7b2c1d4e5f6a7b8)"
+    mkdir -p "${log_dir}"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $MODULE_NAME - $level - $message" >> "${log_dir}/${LOG_MODULE_NAME}_${LOG_TIMESTAMP}_${LOG_EXEC_ID}.log"
   fi
 }
 

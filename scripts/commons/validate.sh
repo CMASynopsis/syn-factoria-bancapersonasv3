@@ -1,23 +1,18 @@
 #!/bin/bash
 #location: scripts/commons/validate.sh
 
-validate_dir() {
-  echo "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-}
+# Función con sufijo único para obtener el directorio de commons
+_script_dir_f3a6e7b2c1d4e5f6a7b8() { echo "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"; }
 
-# Cargar get.sh (contiene get_script_dir)
-source $(validate_dir)/get.sh
+# Cargar get.sh
+source "$(_script_dir_f3a6e7b2c1d4e5f6a7b8)/get.sh"
 
-# Determinar la ruta a scripts/commons
-COMMONS_DIR=$(validate_dir)
-
-# Cargar log.sh para usar handle_error
-# Asumiendo que log.sh está en la misma carpeta (scripts/commons)
-if [[ ! -f "${COMMONS_DIR}/log.sh" ]]; then
+# Cargar log.sh
+if [[ ! -f "$(_script_dir_f3a6e7b2c1d4e5f6a7b8)/log.sh" ]]; then
     echo -e "\033[0;31m[FATAL ERROR] Dependencia log.sh no encontrada.\033[0m" >&2
     exit 1
 fi
-source "${COMMONS_DIR}/log.sh"
+source "$(_script_dir_f3a6e7b2c1d4e5f6a7b8)/log.sh"
 
 # Función para validar variables requeridas
 validate_required() {
