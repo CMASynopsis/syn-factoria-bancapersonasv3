@@ -6,7 +6,7 @@ Ubicación del workflow: `.github/workflows/build-banca-nacional-backend.yml`
 
 ## Propósito
 
-Compila el backend `banca-nacional-backend` (Java 21 + Spring Boot) y publica su imagen Docker en el Azure Container Registry (ACR) cada vez que se actualiza la rama `develop`.
+Compila el backend `banca-nacional-backend` (Java 21 + Spring Boot), publica su imagen Docker en el Azure Container Registry (ACR) y actualiza el **Azure Container App** para usar la nueva imagen cada vez que se actualiza la rama `develop`.
 
 ---
 
@@ -28,6 +28,8 @@ Compila el backend `banca-nacional-backend` (Java 21 + Spring Boot) y publica su
 | `BACKEND_DIR` | `apps/backend/banca-nacional-backend` | Directorio del proyecto Maven |
 | `DOCKERFILE_PATH` | `infra/docker/backend/banca-nacional-backend/Dockerfile` | Ruta al Dockerfile multi-stage |
 | `IMAGE_NAME` | `banca-nacional-backend` | Nombre de la imagen en el ACR |
+| `AZURE_RESOURCE_GROUP` | `rg-geniarh-dev` | Resource Group donde Terraform desplegó la infraestructura |
+| `AZURE_CONTAINER_APP` | `banca-nacional-be-development` | Nombre del Azure Container App del backend |
 
 ---
 
@@ -39,17 +41,25 @@ Ejecuta en `ubuntu-latest` con permisos de lectura de contenido y escritura de p
 
 #### Pasos
 
-1. **Checkout repository** — `actions/checkout@v4`
-2. **Set up JDK 21** — `actions/setup-java@v4` con cache de Maven
+1. **Checkout repository** — `actions/checkout@v6`
+2. **Set up JDK 21** — `actions/setup-java@v5` con cache de Maven
 3. **Build with Maven** — Compila el JAR ejecutable:
    ```bash
    mvn clean package -DskipTests -B
    ```
-4. **Set up Docker Buildx** — `docker/setup-buildx-action@v3`
-5. **Log in to Azure Container Registry** — `azure/docker-login@v2` usando secrets del repositorio
+4. **Set up Docker Buildx** — `docker/setup-buildx-action@v4`
+5. **Log in to Azure Container Registry** — `docker/login-action@v3` usando secrets del repositorio
 6. **Build and push Docker image** — Construye la imagen con el Dockerfile multi-stage y publica dos tags:
    - `<acr-login-server>/banca-nacional-backend:develop-latest`
    - `<acr-login-server>/banca-nacional-backend:<commit-sha>`
+7. **Log in to Azure** — `azure/login@v2` usando el Service Principal configurado en `AZURE_CREDENTIALS`
+8. **Update Azure Container App** — Actualiza la imagen del Container App para que use el tag del commit:
+   ```bash
+   az containerapp update \
+     --name banca-nacional-be-development \
+     --resource-group rg-geniarh-dev \
+     --image <acr-login-server>/banca-nacional-backend:<commit-sha>
+   ```
 
 ---
 
@@ -59,9 +69,12 @@ Configúralos en **Settings → Secrets and variables → Actions** del reposito
 
 | Secret | Descripción |
 |--------|-------------|
-| `ACR_LOGIN_SERVER` | Servidor del Azure Container Registry, ej. `bancaacr.azurecr.io` |
+| `ACR_LOGIN_SERVER` | Servidor del Azure Container Registry, ej. `bancanacionalacrdevelopment.azurecr.io` |
 | `ACR_USERNAME` | Nombre de usuario del ACR (admin user) |
 | `ACR_PASSWORD` | Contraseña del ACR (admin password) |
+| `AZURE_CREDENTIALS` | JSON completo del Service Principal de Azure con permisos `Contributor` sobre el resource group |
+
+> Ver [installation.md](installation.md) para instrucciones detalladas de cómo crear el Service Principal y registrar los secrets.
 
 ---
 
@@ -78,4 +91,4 @@ Configúralos en **Settings → Secrets and variables → Actions** del reposito
 
 - El contexto de build de Docker es `apps/backend/banca-nacional-backend/` (donde reside `pom.xml` y `src/`).
 - El Dockerfile se referencia con la ruta absoluta `${{ github.workspace }}/${{ env.DOCKERFILE_PATH }}` para que Docker lo encuentre desde el contexto correcto.
-- El workflow está duplicado desde `pipelines/github/build-banca-nacional-backend.yml` (fuente de verdad del proyecto) hacia `.github/workflows/` para que GitHub lo detecte y ejecute.
+- El Container App se actualiza con el tag `<commit-sha>` (inmutable) en lugar de `develop-latest` para garantizar que el despliegue sea reproducible y trazable.

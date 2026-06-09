@@ -55,12 +55,45 @@ az acr credential show \
 
 ---
 
-## 2. Variables de entorno del workflow
+## 2. Secret de Azure Service Principal
 
-Las siguientes variables están definidas directamente en el workflow (`env:`). Si necesitas personalizarlas, edita el archivo del pipeline en:
+El workflow actualiza el **Azure Container App** tras publicar la imagen. Para ello necesita un Service Principal con permisos sobre el resource group donde Terraform desplegó la infraestructura.
 
-- `pipelines/github/build-banca-nacional-backend.yml`
-- `.github/workflows/build-banca-nacional-backend.yml`
+### 2.1 Crear el Service Principal
+
+Desde Azure CLI ejecuta:
+
+```bash
+az ad sp create-for-rbac \
+  --name "github-actions-banca-dev" \
+  --role contributor \
+  --scopes /subscriptions/39f6d339-f9c9-4dbc-92a3-e8ee0f6b1bcf/resourceGroups/rg-geniarh-dev \
+  --sdk-auth
+```
+
+El comando devuelve un JSON similar a:
+
+```json
+{
+  "clientId": "...",
+  "clientSecret": "...",
+  "subscriptionId": "...",
+  "tenantId": "...",
+  ...
+}
+```
+
+> **Importante:** Guarda todo el JSON. No podrás recuperar `clientSecret` después.
+
+### 2.2 Registrar el secret en GitHub
+
+Crea un nuevo repository secret llamado **`AZURE_CREDENTIALS`** y pega el JSON completo como valor.
+
+---
+
+## 3. Variables de entorno del workflow
+
+Las siguientes variables están definidas directamente en el workflow (`env:`). Si necesitas personalizarlas, edita el archivo en `.github/workflows/build-banca-nacional-backend.yml`:
 
 | Variable | Valor por defecto | Cuándo cambiarla |
 |----------|-------------------|------------------|
@@ -69,26 +102,28 @@ Las siguientes variables están definidas directamente en el workflow (`env:`). 
 | `BACKEND_DIR` | `apps/backend/banca-nacional-backend` | Si se mueve el código del backend |
 | `DOCKERFILE_PATH` | `infra/docker/backend/banca-nacional-backend/Dockerfile` | Si se reubica el Dockerfile |
 | `IMAGE_NAME` | `banca-nacional-backend` | Si se requiere otro nombre de imagen en el ACR |
+| `AZURE_RESOURCE_GROUP` | `rg-geniarh-dev` | Si cambia el resource group de Terraform |
+| `AZURE_CONTAINER_APP` | `banca-nacional-be-development` | Si cambia el nombre del Container App |
 
 ---
 
-## 3. Verificación
+## 4. Verificación
 
 Una vez configurados los secrets, prueba el workflow:
 
-### 3.1 Ejecución manual
+### 4.1 Ejecución manual
 
 1. Ve a la pestaña **Actions** del repositorio.
 2. Selecciona el workflow **Build & Push Backend to ACR**.
 3. Haz clic en **Run workflow**.
 4. Selecciona la rama `develop` y confirma.
 
-### 3.2 Verificar la imagen en ACR
+### 4.2 Verificar la imagen en ACR
 
 ```bash
 # Listar tags de la imagen
 az acr repository show-tags \
-  --name bancaacr \
+  --name bancanacionalacrdevelopment \
   --repository banca-nacional-backend \
   --output table
 ```
@@ -97,20 +132,34 @@ Deberías ver al menos dos tags:
 - `develop-latest`
 - `<commit-sha>` del último push
 
+### 4.3 Verificar el Container App
+
+```bash
+az containerapp show \
+  --name banca-nacional-be-development \
+  --resource-group rg-geniarh-dev \
+  --query properties.template.containers[0].image \
+  -o tsv
+```
+
+Debería mostrar la imagen con el tag del último commit.
+
 ---
 
-## 4. Solución de problemas
+## 5. Solución de problemas
 
 | Síntoma | Causa probable | Solución |
 |---------|----------------|----------|
 | `denied: requested access to the resource is denied` | Credenciales de ACR incorrectas | Revisa `ACR_LOGIN_SERVER`, `ACR_USERNAME` y `ACR_PASSWORD` en los secrets |
-| ` unauthorized: authentication required` | Usuario administrador deshabilitado | Habilita el admin del ACR con `az acr update --name <acr> --admin-enabled true` |
+| `unauthorized: authentication required` | Usuario administrador deshabilitado | Habilita el admin del ACR con `az acr update --name <acr> --admin-enabled true` |
 | `Could not find artifact ...` | Maven no encuentra dependencias | Verifica que `pom.xml` esté en `apps/backend/banca-nacional-backend/` |
 | `Cannot locate specified Dockerfile` | Ruta del Dockerfile incorrecta | Revisa que `DOCKERFILE_PATH` apunte al archivo correcto |
+| `ERROR: (AuthorizationFailed) ...` | Service Principal sin permisos | Verifica que el SP tenga rol `Contributor` sobre `rg-geniarh-dev` |
+| `ERROR: (ResourceNotFound) ...` | Nombre de Container App o RG incorrecto | Revisa `AZURE_CONTAINER_APP` y `AZURE_RESOURCE_GROUP` en el workflow |
 
 ---
 
-## 5. Referencias
+## 6. Referencias
 
 - [Documentación del workflow backend](build-banca-nacional-backend.md)
 - [Despliegue en Azure](../../architecture/azure-deployment.md)
