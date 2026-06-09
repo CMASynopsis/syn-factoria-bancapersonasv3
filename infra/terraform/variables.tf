@@ -77,6 +77,18 @@ variable "container_max_replicas" {
   default     = 3
 }
 
+variable "container_cpu" {
+  description = "CPU cores allocated to the Container App container (e.g., 0.25, 0.5, 1.0)"
+  type        = number
+  default     = 0.25
+}
+
+variable "container_memory" {
+  description = "Memory allocated to the Container App container (e.g., 0.5Gi, 1.0Gi, 2.0Gi)"
+  type        = string
+  default     = "0.5Gi"
+}
+
 variable "acr_sku" {
   description = "SKU for Azure Container Registry"
   type        = string

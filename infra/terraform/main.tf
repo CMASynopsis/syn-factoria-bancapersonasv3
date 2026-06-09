@@ -108,8 +108,8 @@ resource "azurerm_container_app" "backend" {
     container {
       name   = "backend"
       image  = "${azurerm_container_registry.main.login_server}/${var.project_name}-backend:latest"
-      cpu    = 0.25
-      memory = "0.5Gi"
+      cpu    = var.container_cpu
+      memory = var.container_memory
 
       env {
         name  = "SPRING_DATASOURCE_URL"
