@@ -1,6 +1,6 @@
 #!/bin/bash
 # CMA Factoria - Init IA Script
-# Description: Crea .opencode y .claude con symlinks a .iaconfig
+# Description: Crea .opencode, .claude y .kimi-code con symlinks a .iaconfig
 
 set -e
 
@@ -50,5 +50,22 @@ log "INFO" "  .claude/agents   -> ../.iaconfig/agents"
 log "INFO" "  .claude/skills   -> ../.iaconfig/skills"
 log "INFO" "  .claude/commands -> ../.iaconfig/commands"
 log "INFO" "  .claude/hooks    -> ../.iaconfig/hooks"
+
+# ============================================
+# .kimi-code
+# ============================================
+log "INFO" "Creando .kimi-code..."
+mkdir -p "$PROJECT_DIR/.kimi-code"
+
+ln -sfn ../.iaconfig/agents "$PROJECT_DIR/.kimi-code/agents"
+ln -sfn ../.iaconfig/skills "$PROJECT_DIR/.kimi-code/skills"
+ln -sfn ../.iaconfig/commands "$PROJECT_DIR/.kimi-code/commands"
+ln -sfn ../.iaconfig/hooks "$PROJECT_DIR/.kimi-code/hooks"
+
+log "INFO" "  .kimi-code/agents   -> ../.iaconfig/agents"
+log "INFO" "  .kimi-code/skills   -> ../.iaconfig/skills"
+log "INFO" "  .kimi-code/commands -> ../.iaconfig/commands"
+log "INFO" "  .kimi-code/hooks    -> ../.iaconfig/hooks"
+log "INFO" "  Usar: kimi --skills-dir .kimi-code/skills"
 
 log "SUCCESS" "Configuración de IA completada"

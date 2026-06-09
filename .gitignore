@@ -61,6 +61,7 @@ package.json
 # Runtime / Config files (but keep examples)
 .opencode/
 .claude/
+.kimi-code/
 .agents/
 AGENTS.md
 CLAUDE.md
@@ -78,3 +79,21 @@ docs/templates/
 # Exceptions — keep example configs tracked
 !opencode.json.example
 !.claude/settings.local.json
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+*.tfvars
+
+# Keep .tfvars checked in (no secrets), but ignore local overrides
+*.tfvars.local
+profile.env

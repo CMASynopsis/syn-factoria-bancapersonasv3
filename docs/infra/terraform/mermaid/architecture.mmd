@@ -1,0 +1,44 @@
+graph TB
+  subgraph "Azure Subscription"
+    subgraph "Resource Group"
+      ACR["Container Registry<br/>(banca-nacional-acr-*)
+      SKU: Basic"]
+      ACA_Env["Container App Environment<br/>(banca-nacional-env-*)
+      Consumption Plan"]
+      ACA["Container App Backend<br/>(banca-nacional-backend-*)
+      CPU: 0.25 | RAM: 0.5Gi
+      min: replicas | max: replicas"]
+      MySQL["MySQL Flexible Server<br/>(banca-nacional-mysql-*)
+      SKU: Standard_B1ms
+      Storage: variable GB"]
+      DB["Database<br/>(banca_nacional_db)
+      charset: utf8"]
+      SWA["Static Web App<br/>(banca-nacional-frontend-*)
+      SKU: Free"]
+      LAW["Log Analytics<br/>(banca-nacional-logs-*)
+      Retention: 30d"]
+      UAI["User Assigned Identity<br/>(banca-nacional-identity-*)"]
+      RG["Resource Group<br/>(rg-ibm-modernizacion-*)"]
+      Budget["Budget Alert<br/>Monthly: variable USD"]
+    end
+  end
+
+  RG --> ACR
+  RG --> ACA_Env
+  RG --> ACA
+  RG --> MySQL
+  RG --> SWA
+  RG --> LAW
+  RG --> UAI
+  RG --> Budget
+
+  ACA_Env --> LAW
+  ACA_Env --> ACA
+  MySQL --> DB
+  ACA --> ACR
+  ACA --> MySQL
+  UAI --> ACA
+  UAI -. "AcrPull Role" .-> ACR
+
+  Internet["Internet"] --> SWA
+  SWA -. "/api/* proxy" .-> ACA

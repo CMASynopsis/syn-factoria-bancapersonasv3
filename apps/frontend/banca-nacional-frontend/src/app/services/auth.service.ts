@@ -5,8 +5,9 @@ import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { LoginResponse } from '../models/usuario.model';
 import { ApiResponse } from '../models/transferencia.model';
+import { API_BASE } from '../api.config';
 
-const API = 'http://localhost:8080/api/auth';
+const API = `${API_BASE}/api/auth`;
 const TOKEN_KEY = 'banca_token';
 const USER_KEY  = 'banca_user';
 

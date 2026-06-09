@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Transferencia, ApiResponse } from '../models/transferencia.model';
 
-const API = 'http://localhost:8080/api/transferencias';
+import { API_BASE } from '../api.config';
+
+const API = `${API_BASE}/api/transferencias`;
 
 export interface TransferenciaPropiaDTO {
   cuentaOrigenId: number;

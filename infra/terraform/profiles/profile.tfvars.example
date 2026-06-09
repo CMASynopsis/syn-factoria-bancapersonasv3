@@ -1,0 +1,21 @@
+profile              = "dev"
+location             = "eastus2"
+mysql_location       = "eastus"
+environment          = "development"
+container_min_replicas = 0
+container_max_replicas = 1
+cors_allowed_origins = "http://localhost:4200,https://localhost:4200"
+acr_sku              = "Basic"
+mysql_sku_name       = "Standard_B1ms"
+mysql_storage_size   = 20
+budget_amount        = 30
+backend_env_vars = {
+  APP_JWT_SECRET          = "dev-jwt-secret-change-in-production"
+  LOGGING_LEVEL_ROOT      = "DEBUG"
+  SPRING_PROFILES_ACTIVE  = "azure,dev"
+}
+tags = {
+  Project     = "Banca-Nacional"
+  Environment = "Development"
+  ManagedBy   = "Terraform"
+}

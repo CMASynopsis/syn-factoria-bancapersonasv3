@@ -1,0 +1,480 @@
+openapi: "3.0.3"
+info:
+  title: Banca Nacional API
+  description: |
+    API REST del backend bancario. Todas las operaciones excepto `/api/auth/login`
+    requieren autenticación vía JWT Bearer token.
+  version: "3.0.0"
+  contact:
+    name: Syn Factoría
+    url: "https://synopsis.ws"
+
+servers:
+  - url: "https://banca-nacional-be-development--asvb6m4.wittyrock-8526a645.eastus2.azurecontainerapps.io"
+    description: Desarrollo (Azure Container Apps)
+  - url: "http://localhost:8080"
+    description: Local
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Credenciales válidas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - example:
+                      exitoso: false
+                      mensaje: "Credenciales inválidas."
+                      data: null
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sesión cerrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /api/cuentas:
+    get:
+      tags: [Cuentas]
+      summary: Listar cuentas del usuario autenticado
+      operationId: listarCuentas
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: tipo
+          schema:
+            type: string
+            enum: [AHORROS, CORRIENTE, PLAZO_FIJO, TODAS]
+          required: false
+          description: "Filtrar por tipo de cuenta. Omite o usa TODAS para traer todas."
+      responses:
+        "200":
+          description: Lista de cuentas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Cuenta"
+
+  /api/transferencias:
+    get:
+      tags: [Transferencias]
+      summary: Historial de transferencias del usuario
+      operationId: historialTransferencias
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Historial de transferencias
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Transferencia"
+
+  /api/transferencias/propia:
+    post:
+      tags: [Transferencias]
+      summary: Transferencia entre cuentas propias
+      operationId: transferenciaPropia
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferenciaPropiaRequest"
+      responses:
+        "200":
+          description: Transferencia realizada con éxito (data = número de operación)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: string
+                        example: "OP-20260608-000042"
+        "400":
+          description: Error en la transferencia
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - example:
+                      exitoso: false
+                      mensaje: "Saldo insuficiente."
+                      data: null
+
+  /api/transferencias/mismo-banco:
+    post:
+      tags: [Transferencias]
+      summary: Transferencia a cuenta del mismo banco
+      operationId: transferenciaMismoBanco
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferenciaMismoBancoRequest"
+      responses:
+        "200":
+          description: Transferencia realizada con éxito (data = número de operación)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: string
+        "400":
+          description: Error en la transferencia
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+
+  /api/transferencias/otro-banco:
+    post:
+      tags: [Transferencias]
+      summary: Transferencia a otro banco vía CCI
+      operationId: transferenciaOtroBanco
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferenciaOtroBancoRequest"
+      responses:
+        "200":
+          description: Transferencia realizada con éxito (data = número de operación)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: string
+        "400":
+          description: Error en la transferencia
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido de `POST /api/auth/login`
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        exitoso:
+          type: boolean
+          example: true
+        mensaje:
+          type: string
+          example: "Operación exitosa."
+        data:
+          nullable: true
+      required:
+        - exitoso
+        - mensaje
+        - data
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "jperez"
+        password:
+          type: string
+          format: password
+          example: "MiPassword123"
+      xml:
+        name: loginRequest
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token para autenticar solicitudes posteriores
+          example: "eyJhbGciOiJIUzI1NiJ9..."
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "jperez"
+        nombres:
+          type: string
+          example: "Juan Carlos"
+        apellidos:
+          type: string
+          example: "Pérez López"
+        rol:
+          type: string
+          example: "CLIENTE"
+
+    Cuenta:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 101
+        numeroCuenta:
+          type: string
+          example: "00123456789012345678"
+        tipoCuenta:
+          type: string
+          enum: [AHORROS, CORRIENTE, PLAZO_FIJO]
+          example: AHORROS
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: PEN
+        saldo:
+          type: number
+          format: double
+          example: 15280.50
+        saldoDisponible:
+          type: number
+          format: double
+          example: 15280.50
+        estado:
+          type: string
+          enum: [ACTIVA, INACTIVA, BLOQUEADA]
+          example: ACTIVA
+        usuarioId:
+          type: integer
+          format: int64
+          example: 1
+        usuarioNombre:
+          type: string
+          example: "Juan Carlos Pérez López"
+        cci:
+          type: string
+          example: "00123456789012345678"
+        fechaApertura:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00"
+
+    Transferencia:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5001
+        numeroOperacion:
+          type: string
+          example: "OP-20260608-000042"
+        tipoTransferencia:
+          type: string
+          enum: [PROPIA, MISMO_BANCO, OTRO_BANCO]
+          example: PROPIA
+        cuentaOrigenId:
+          type: integer
+          format: int64
+          example: 101
+        cuentaOrigenNumero:
+          type: string
+          example: "001-234-567-89012345678"
+        cuentaDestinoId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 102
+        cuentaDestinoNumero:
+          type: string
+          nullable: true
+          example: "001-234-567-89012345679"
+        cuentaDestinoCci:
+          type: string
+          nullable: true
+          example: "00212345678901234567"
+        bancoDestino:
+          type: string
+          nullable: true
+          example: "BBVA Perú"
+        titularDestino:
+          type: string
+          nullable: true
+          example: "María García Torres"
+        monto:
+          type: number
+          format: double
+          example: 500.00
+        moneda:
+          type: string
+          enum: [PEN, USD]
+          example: PEN
+        glosa:
+          type: string
+          nullable: true
+          example: "Pago de servicios"
+        estado:
+          type: string
+          enum: [PENDIENTE, COMPLETADA, RECHAZADA]
+          example: COMPLETADA
+        motivoRechazo:
+          type: string
+          nullable: true
+          example: null
+        fechaOperacion:
+          type: string
+          format: date-time
+          example: "2026-06-08T14:30:00"
+        fechaValor:
+          type: string
+          format: date-time
+          example: "2026-06-08T14:30:00"
+
+    TransferenciaPropiaRequest:
+      type: object
+      required:
+        - cuentaOrigenId
+        - cuentaDestinoId
+        - monto
+      properties:
+        cuentaOrigenId:
+          type: integer
+          format: int64
+          example: 101
+        cuentaDestinoId:
+          type: integer
+          format: int64
+          example: 102
+        monto:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 500.00
+        glosa:
+          type: string
+          example: "Transferencia entre mis cuentas"
+
+    TransferenciaMismoBancoRequest:
+      type: object
+      required:
+        - cuentaOrigenId
+        - numeroCuentaDestino
+        - monto
+      properties:
+        cuentaOrigenId:
+          type: integer
+          format: int64
+          example: 101
+        numeroCuentaDestino:
+          type: string
+          description: Número de cuenta destino (mismo banco)
+          example: "00123456789012345679"
+        monto:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 250.00
+        glosa:
+          type: string
+          example: "Pago a amigo"
+
+    TransferenciaOtroBancoRequest:
+      type: object
+      required:
+        - cuentaOrigenId
+        - cciDestino
+        - titularDestino
+        - bancoDestino
+        - monto
+      properties:
+        cuentaOrigenId:
+          type: integer
+          format: int64
+          example: 101
+        cciDestino:
+          type: string
+          description: CCI de 20 dígitos de la cuenta destino
+          minLength: 20
+          maxLength: 20
+          example: "00212345678901234567"
+        titularDestino:
+          type: string
+          example: "María García Torres"
+        bancoDestino:
+          type: string
+          example: "BBVA Perú"
+        monto:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 1500.00
+        glosa:
+          type: string
+          example: "Pago de factura"
